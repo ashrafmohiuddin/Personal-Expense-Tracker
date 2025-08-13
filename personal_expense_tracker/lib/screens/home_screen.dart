@@ -4,14 +4,43 @@ import '../providers/expense_provider.dart';
 import '../utils/formatters.dart';
 import '../utils/constants.dart';
 import '../theme/app_theme.dart';
+import '../utils/animations.dart';
 import '../models/transaction.dart';
 import 'summary_screen.dart';
 import 'assets_screen.dart';
 import 'transactions_screen.dart';
 import 'add_expense_screen.dart';
+import 'settings_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  void _onTitleTap() {
+    final now = DateTime.now();
+    if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 3) {
+      _tapCount = 1;
+    } else {
+      _tapCount++;
+    }
+    _lastTapTime = now;
+
+    if (_tapCount >= 5) {
+      _tapCount = 0;
+      _showHiddenMenu();
+    }
+  }
+
+  void _showHiddenMenu() {
+    Navigator.pushNamed(context, '/settings');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,46 +73,44 @@ class HomeScreen extends StatelessWidget {
                 expandedHeight: 120,
                 floating: false,
                 pinned: true,
-                backgroundColor: AppTheme.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 elevation: 0,
                 flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    'Personal Finance',
-                    style: TextStyle(
-                      color: AppTheme.deepBlack,
-                      fontWeight: FontWeight.bold,
+                  title: GestureDetector(
+                    onTap: _onTitleTap,
+                    child: Text(
+                      'Personal Finance',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   background: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
-                          AppTheme.primaryGreen.withOpacity(0.1),
-                          AppTheme.primaryOrange.withOpacity(0.1),
+                          Theme.of(context).colorScheme.surface,
+                          Theme.of(context).colorScheme.surface,
                         ],
+                        stops: const [0.0, 1.0],
                       ),
                     ),
                   ),
                 ),
                 actions: [
                   IconButton(
-                    icon: Icon(Icons.analytics, color: AppTheme.deepBlack),
+                    icon: Icon(Icons.analytics, color: Theme.of(context).colorScheme.onSurface),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SummaryScreen()),
-                      );
+                      Navigator.pushNamed(context, '/summary');
                     },
                   ),
                   IconButton(
-                    icon: Icon(Icons.account_balance_wallet, color: AppTheme.deepBlack),
+                    icon: Icon(Icons.account_balance_wallet, color: Theme.of(context).colorScheme.onSurface),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const AssetsScreen()),
-                      );
+                      Navigator.pushNamed(context, '/assets');
                     },
                   ),
                 ],
@@ -144,8 +171,8 @@ class HomeScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryGreen.withOpacity(0.1),
-              AppTheme.primaryOrange.withOpacity(0.1),
+              Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             ],
           ),
         ),
@@ -155,8 +182,8 @@ class HomeScreen extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppTheme.primaryGreen,
-                  child: Icon(Icons.person, color: AppTheme.white),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -167,13 +194,13 @@ class HomeScreen extends StatelessWidget {
                         'Welcome back!',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.deepBlack,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         'Track your finances with ease',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.mediumGray,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -333,24 +360,20 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
+              Column(
                 children: [
-                  Expanded(
-                    child: _buildAssetStat(
-                      context,
-                      'Total Assets',
-                      Formatters.formatCurrency(totalAssets),
-                      AppTheme.primaryGreen,
-                    ),
+                  _buildAssetStat(
+                    context,
+                    'Total Assets',
+                    Formatters.formatCurrency(totalAssets),
+                    AppTheme.primaryGreen,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildAssetStat(
-                      context,
-                      'Monthly Income',
-                      Formatters.formatCurrency(recurringIncome),
-                      AppTheme.primaryOrange,
-                    ),
+                  const SizedBox(height: 12),
+                  _buildAssetStat(
+                    context,
+                    'Monthly Income',
+                    Formatters.formatCurrency(recurringIncome),
+                    AppTheme.primaryOrange,
                   ),
                 ],
               ),
@@ -396,7 +419,7 @@ class HomeScreen extends StatelessWidget {
         else
           ...recentTransactions.take(5).map((transaction) => 
             _buildTransactionCard(context, transaction)
-          ).toList(),
+          ),
       ],
     );
   }
@@ -517,7 +540,7 @@ class HomeScreen extends StatelessWidget {
                   category.value,
                   Color(color),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),

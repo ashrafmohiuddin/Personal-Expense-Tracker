@@ -193,4 +193,11 @@ class DatabaseHelper implements StorageService {
     
     return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
+
+  @override
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete('transactions');
+    await db.delete('assets');
+  }
 } 

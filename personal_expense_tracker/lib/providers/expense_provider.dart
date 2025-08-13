@@ -188,4 +188,27 @@ class ExpenseProvider with ChangeNotifier {
         .where((asset) => asset.isRecurring && asset.type == AssetType.salary)
         .fold(0.0, (sum, asset) => sum + asset.amount);
   }
+
+  // Get all transactions for export
+  Future<List<Transaction>> getAllTransactions() async {
+    return _transactions;
+  }
+
+  // Get all assets for export
+  Future<List<Asset>> getAllAssets() async {
+    return _assets;
+  }
+
+  // Clear all data for import
+  Future<void> clearAllData() async {
+    try {
+      await _storageService.clearAllData();
+      _transactions.clear();
+      _assets.clear();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error clearing data: $e');
+      rethrow;
+    }
+  }
 } 

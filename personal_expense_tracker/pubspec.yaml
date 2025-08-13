@@ -53,6 +53,10 @@ dependencies:
   
   # Shared preferences for web storage
   shared_preferences: ^2.2.2
+  
+  # File picker for import/export functionality
+  file_picker: ^8.0.0
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:

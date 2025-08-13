@@ -103,30 +103,43 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final color = isExpense ? AppTheme.primaryOrange : AppTheme.primaryGreen;
     final icon = isExpense ? Icons.remove : Icons.add;
 
-    return Slidable(
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        children: [
-          // Edit action
-          SlidableAction(
-            onPressed: (context) => _editTransaction(context, transaction),
-            backgroundColor: AppTheme.primaryGreen,
-            foregroundColor: Colors.white,
-            icon: Icons.edit,
-            label: 'Edit',
-          ),
-          // Delete action
-          SlidableAction(
-            onPressed: (context) => _deleteTransaction(context, transaction, provider),
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
-        ],
-      ),
-      child: Card(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Slidable(
+        endActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          extentRatio: 0.42,
+          children: [
+            // Edit action
+            SlidableAction(
+              onPressed: (context) => _editTransaction(context, transaction),
+              backgroundColor: AppTheme.primarySand,
+              foregroundColor: AppTheme.deepBlack,
+              icon: Icons.edit,
+              label: 'Edit',
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
+            // Delete action
+            SlidableAction(
+              onPressed: (context) => _deleteTransaction(context, transaction, provider),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
+          ],
+        ),
+        child: Card(
         margin: const EdgeInsets.only(bottom: 8),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           leading: CircleAvatar(
@@ -187,6 +200,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

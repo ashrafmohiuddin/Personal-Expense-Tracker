@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../models/asset.dart';
 import '../providers/expense_provider.dart';
 import '../utils/formatters.dart';
@@ -41,29 +42,21 @@ class _AssetsScreenState extends State<AssetsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Summary Cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        context,
-                        'Total Assets',
-                        totalAssets,
-                        AppTheme.primaryGreen,
-                        Icons.account_balance_wallet,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        context,
-                        'Monthly Income',
-                        recurringIncome,
-                        AppTheme.primaryOrange,
-                        Icons.trending_up,
-                      ),
-                    ),
-                  ],
+                // Summary Cards - Always stacked to prevent overflow
+                _buildSummaryCard(
+                  context,
+                  'Total Assets',
+                  totalAssets,
+                  AppTheme.primaryGreen,
+                  Icons.account_balance_wallet,
+                ),
+                const SizedBox(height: 16),
+                _buildSummaryCard(
+                  context,
+                  'Monthly Income',
+                  recurringIncome,
+                  AppTheme.primaryOrange,
+                  Icons.trending_up,
                 ),
                 const SizedBox(height: 24),
 
@@ -86,7 +79,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                 if (assets.isEmpty)
                   _buildEmptyState(context)
                 else
-                  ...assets.map((asset) => _buildAssetCard(context, asset, provider)).toList(),
+                  ...assets.map((asset) => _buildAssetCard(context, asset, provider)),
               ],
             ),
           );
@@ -103,29 +96,53 @@ class _AssetsScreenState extends State<AssetsScreen> {
     IconData icon,
   ) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.1),
+              color.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.deepBlack,
-                  ),
-                ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(height: 12),
-            Text(
-              Formatters.formatCurrency(amount),
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.deepBlack,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    Formatters.formatCurrency(amount),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -138,86 +155,115 @@ class _AssetsScreenState extends State<AssetsScreen> {
     final color = asset.isRecurring ? AppTheme.primaryGreen : AppTheme.primarySand;
     final icon = asset.isRecurring ? Icons.repeat : Icons.account_balance_wallet;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(
-          asset.name,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Slidable(
+      key: ValueKey('asset_${asset.id ?? asset.name}'),
+              endActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          extentRatio: 0.35,
           children: [
-            Text(
-              asset.type.displayName,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.mediumGray,
+            SlidableAction(
+              onPressed: (_) => _showEditAssetDialog(context, asset),
+              backgroundColor: AppTheme.primarySand,
+              foregroundColor: AppTheme.deepBlack,
+              icon: Icons.edit,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            if (asset.description != null && asset.description!.isNotEmpty)
-              Text(
-                asset.description!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.mediumGray,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            SlidableAction(
+              onPressed: (_) => _deleteAsset(context, asset, provider),
+              backgroundColor: Colors.red.shade400,
+              foregroundColor: AppTheme.white,
+              icon: Icons.delete,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(12),
+                bottomRight: Radius.circular(12),
               ),
-            if (asset.isRecurring)
-              Text(
-                'Recurring Monthly',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.primaryGreen,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+            ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.1),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      asset.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      asset.type.displayName,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.mediumGray,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (asset.description != null && asset.description!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        asset.description!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.mediumGray,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (asset.isRecurring) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Recurring Monthly',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: Text(
                   Formatters.formatCurrency(asset.amount),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: color,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
                 ),
-              ],
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 16),
-                  onPressed: () => _showEditAssetDialog(context, asset),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 16),
-                  onPressed: () => _deleteAsset(context, asset, provider),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
+    ),
     );
   }
 

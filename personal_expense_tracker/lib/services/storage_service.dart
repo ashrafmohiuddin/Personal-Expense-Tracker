@@ -14,6 +14,7 @@ abstract class StorageService {
   Future<int> insertAsset(Asset asset);
   Future<int> updateAsset(Asset asset);
   Future<int> deleteAsset(int id);
+  Future<void> clearAllData();
 }
 
 class WebStorageService implements StorageService {
@@ -139,6 +140,14 @@ class WebStorageService implements StorageService {
         .toList();
     await _prefs.setStringList(_assetsKey, assetsJson);
   }
+
+  @override
+  Future<void> clearAllData() async {
+    await _prefs.remove(_transactionsKey);
+    await _prefs.remove(_assetsKey);
+    await _prefs.remove(_nextTransactionIdKey);
+    await _prefs.remove(_nextAssetIdKey);
+  }
 }
 
 class MobileStorageService implements StorageService {
@@ -174,4 +183,7 @@ class MobileStorageService implements StorageService {
 
   @override
   Future<int> deleteAsset(int id) => _sqliteService.deleteAsset(id);
+
+  @override
+  Future<void> clearAllData() => _sqliteService.clearAllData();
 } 

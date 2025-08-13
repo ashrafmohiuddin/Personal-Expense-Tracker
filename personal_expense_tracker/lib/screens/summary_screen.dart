@@ -19,18 +19,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.lightGray,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Financial Summary',
           style: TextStyle(
-            color: AppTheme.deepBlack,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppTheme.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.deepBlack),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: Consumer<ExpenseProvider>(
         builder: (context, provider, child) {
@@ -68,9 +68,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Select Period',
-                          style: AppTheme.subheadingStyle,
+                          style: AppTheme.subheadingStyle(context),
                         ),
                         const SizedBox(height: AppTheme.paddingSmall),
                         DropdownButtonFormField<String>(
@@ -138,10 +138,10 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Expenses by Category',
-                            style: AppTheme.subheadingStyle,
-                          ),
+                                                      Text(
+                              'Expenses by Category',
+                              style: AppTheme.subheadingStyle(context),
+                            ),
                           const SizedBox(height: AppTheme.paddingMedium),
                           SizedBox(
                             height: 200,
@@ -169,10 +169,10 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Income vs Expenses',
-                          style: AppTheme.subheadingStyle,
-                        ),
+                                                  Text(
+                            'Income vs Expenses',
+                            style: AppTheme.subheadingStyle(context),
+                          ),
                         const SizedBox(height: AppTheme.paddingMedium),
                         SizedBox(
                           height: 200,
@@ -360,12 +360,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
               Expanded(
                 child: Text(
                   entry.key,
-                  style: const AppTheme.bodyStyle,
+                  style: AppTheme.bodyStyle(context),
                 ),
               ),
               Text(
                 Formatters.formatCurrency(entry.value),
-                style: const AppTheme.bodyStyle,
+                style: AppTheme.bodyStyle(context),
               ),
             ],
           ),

@@ -29,6 +29,10 @@ class Transaction {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return toMap();
+  }
+
   factory Transaction.fromMap(Map<String, dynamic> map) {
     return Transaction(
       id: map['id'],
@@ -41,6 +45,10 @@ class Transaction {
         (e) => e.toString() == map['type'],
       ),
     );
+  }
+
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    return Transaction.fromMap(json);
   }
 
   Transaction copyWith({

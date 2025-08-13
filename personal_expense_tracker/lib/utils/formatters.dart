@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'constants.dart';
+import '../models/currency.dart';
 
 class Formatters {
   static final NumberFormat _currencyFormatter = NumberFormat.currency(
@@ -13,7 +14,15 @@ class Formatters {
 
   // Format currency
   static String formatCurrency(double amount) {
-    return _currencyFormatter.format(amount);
+    final code = AppConstants.getCurrencyCodeSync();
+    final currency = Currency.fromCode(code) ?? Currency.getDefault();
+    return currency.formatAmount(amount);
+  }
+
+  // Format currency with specific currency code
+  static String formatCurrencyWithCode(double amount, String currencyCode) {
+    final currency = Currency.fromCode(currencyCode) ?? Currency.getDefault();
+    return currency.formatAmount(amount);
   }
 
   // Format date

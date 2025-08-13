@@ -29,6 +29,10 @@ class Asset {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return toMap();
+  }
+
   factory Asset.fromMap(Map<String, dynamic> map) {
     return Asset(
       id: map['id'],
@@ -43,6 +47,10 @@ class Asset {
           : null,
       isRecurring: map['isRecurring'] == 1,
     );
+  }
+
+  factory Asset.fromJson(Map<String, dynamic> json) {
+    return Asset.fromMap(json);
   }
 
   Asset copyWith({
