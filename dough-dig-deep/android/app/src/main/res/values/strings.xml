@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">dough-dig-deep</string>
-    <string name="title_activity_main">dough-dig-deep</string>
-    <string name="package_name">app.lovable.c275334e88bc41ae86a42307bcc5875b</string>
-    <string name="custom_url_scheme">app.lovable.c275334e88bc41ae86a42307bcc5875b</string>
-</resources>

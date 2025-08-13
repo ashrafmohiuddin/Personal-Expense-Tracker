@@ -123,7 +123,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
             ],
             stops: const [0.0, 1.0],
           ),

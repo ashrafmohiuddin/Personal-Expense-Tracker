@@ -14,9 +14,7 @@ class DatabaseHelper implements StorageService {
 
   @override
   Future<void> init() async {
-    if (_database == null) {
-      _database = await _initDatabase();
-    }
+    _database ??= await _initDatabase();
   }
 
   Future<Database> get database async {
@@ -63,11 +61,13 @@ class DatabaseHelper implements StorageService {
   }
 
   // Transaction methods
+  @override
   Future<int> insertTransaction(app_models.Transaction transaction) async {
     final db = await database;
     return await db.insert('transactions', transaction.toMap());
   }
 
+  @override
   Future<List<app_models.Transaction>> getTransactions() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -91,6 +91,7 @@ class DatabaseHelper implements StorageService {
     return List.generate(maps.length, (i) => app_models.Transaction.fromMap(maps[i]));
   }
 
+  @override
   Future<int> updateTransaction(app_models.Transaction transaction) async {
     final db = await database;
     return await db.update(
@@ -101,6 +102,7 @@ class DatabaseHelper implements StorageService {
     );
   }
 
+  @override
   Future<int> deleteTransaction(int id) async {
     final db = await database;
     return await db.delete(
@@ -111,17 +113,20 @@ class DatabaseHelper implements StorageService {
   }
 
   // Asset methods
+  @override
   Future<int> insertAsset(Asset asset) async {
     final db = await database;
     return await db.insert('assets', asset.toMap());
   }
 
+  @override
   Future<List<Asset>> getAssets() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('assets');
     return List.generate(maps.length, (i) => Asset.fromMap(maps[i]));
   }
 
+  @override
   Future<int> updateAsset(Asset asset) async {
     final db = await database;
     return await db.update(
@@ -132,6 +137,7 @@ class DatabaseHelper implements StorageService {
     );
   }
 
+  @override
   Future<int> deleteAsset(int id) async {
     final db = await database;
     return await db.delete(
