@@ -1,0 +1,328 @@
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../design/tokens.dart';
+import '../../../../core/formatters.dart';
+import '../../domain/models/transaction.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../widgets/category_picker.dart';
+
+class EditTransactionScreen extends ConsumerStatefulWidget {
+  const EditTransactionScreen({
+    super.key,
+    required this.transactionId,
+  });
+
+  final String transactionId;
+
+  @override
+  ConsumerState<EditTransactionScreen> createState() => _EditTransactionScreenState();
+}
+
+class _EditTransactionScreenState extends ConsumerState<EditTransactionScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  final _merchantController = TextEditingController();
+  final _noteController = TextEditingController();
+
+  TransactionType _type = TransactionType.expense;
+  String _selectedCategory = '';
+  DateTime _selectedDate = DateTime.now();
+  bool _isValid = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransaction();
+    _amountController.addListener(_validateForm);
+    _merchantController.addListener(_validateForm);
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _merchantController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTransaction() async {
+    try {
+      final repository = ref.read(transactionRepositoryProvider.notifier);
+      final transaction = await repository.getTransaction(widget.transactionId);
+      
+      if (transaction != null && mounted) {
+        setState(() {
+          _type = transaction.type;
+          _selectedCategory = transaction.category;
+          _selectedDate = transaction.date;
+          _amountController.text = transaction.amount.toString();
+          _merchantController.text = transaction.merchant ?? '';
+          _noteController.text = transaction.note ?? '';
+          _isLoading = false;
+        });
+        _validateForm();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading transaction: $e')),
+        );
+        context.pop();
+      }
+    }
+  }
+
+  void _validateForm() {
+    final isValid = _amountController.text.isNotEmpty &&
+        double.tryParse(_amountController.text) != null &&
+        _selectedCategory.isNotEmpty;
+    
+    if (isValid != _isValid) {
+      setState(() {
+        _isValid = isValid;
+      });
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectCategory() async {
+    final category = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => const CategoryPicker(),
+    );
+    if (category != null) {
+      setState(() {
+        _selectedCategory = category;
+        _validateForm();
+      });
+    }
+  }
+
+  Future<void> _updateTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final amount = double.parse(_amountController.text);
+    final transaction = Transaction(
+      id: widget.transactionId,
+      type: _type,
+      amount: amount,
+      category: _selectedCategory,
+      merchant: _merchantController.text.isNotEmpty ? _merchantController.text : null,
+      date: _selectedDate,
+      note: _noteController.text.isNotEmpty ? _noteController.text : null,
+    );
+
+    try {
+      final repository = ref.read(transactionRepositoryProvider.notifier);
+      await repository.updateTransaction(transaction);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction updated')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating transaction: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Transaction'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(AppTokens.spacing16),
+          children: [
+            // Transaction Type Toggle
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTokens.spacing8),
+                child: SegmentedButton<TransactionType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: TransactionType.expense,
+                      label: Text('Expense'),
+                      icon: Icon(Icons.remove),
+                    ),
+                    ButtonSegment(
+                      value: TransactionType.income,
+                      label: Text('Income'),
+                      icon: Icon(Icons.add),
+                    ),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (Set<TransactionType> selection) {
+                    setState(() {
+                      _type = selection.first;
+                    });
+                  },
+                ),
+              ),
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing24),
+
+            // Amount Input
+            TextFormField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '₹ ',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter an amount';
+                }
+                if (double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing16),
+
+            // Date Picker
+            InkWell(
+              onTap: _selectDate,
+              borderRadius: BorderRadius.circular(AppTokens.radius),
+              child: Container(
+                padding: const EdgeInsets.all(AppTokens.spacing16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today),
+                    const SizedBox(width: AppTokens.spacing12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Date',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        Text(
+                          Formatters.formatDate(_selectedDate),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing16),
+
+            // Category Picker
+            InkWell(
+              onTap: _selectCategory,
+              borderRadius: BorderRadius.circular(AppTokens.radius),
+              child: Container(
+                padding: const EdgeInsets.all(AppTokens.spacing16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: BorderRadius.circular(AppTokens.radius),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.category),
+                    const SizedBox(width: AppTokens.spacing12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Category',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                          Text(
+                            _selectedCategory,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing16),
+
+            // Merchant Input
+            TextFormField(
+              controller: _merchantController,
+              decoration: const InputDecoration(
+                labelText: 'Merchant (Optional)',
+                icon: Icon(Icons.store),
+              ),
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing16),
+
+            // Note Input
+            TextFormField(
+              controller: _noteController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Note (Optional)',
+                icon: Icon(Icons.note),
+              ),
+            ).animate().fadeIn().slideY(begin: 0.3),
+            const SizedBox(height: AppTokens.spacing32),
+
+            // Update Button
+            FilledButton(
+              onPressed: _isValid ? _updateTransaction : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child: const Text('Update Transaction'),
+            ).animate().fadeIn().slideY(begin: 0.3),
+          ],
+        ),
+      ),
+    );
+  }
+}
